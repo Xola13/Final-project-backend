@@ -24,7 +24,7 @@ app.set("port", process.env.PORT || 1150);
 // API routes
 app.get("/", (req, res, next) => {
     res.send({
-      message: "Welcome to pont of sale Api",
+      message: "Welcome to Ecommerce Api",
 
       user_routes: {
         user_register: {
