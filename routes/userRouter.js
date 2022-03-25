@@ -23,7 +23,7 @@ router.get('/', authenticationTokenAndAdmin ,async (req, res, next)=> {
 
 // GET ONE
 
-router.get('/find/:id', authenticationTokenAndAdmin, async (req, res, next)=>{
+router.get('/user/:id', authenticationTokenAndAdmin, async (req, res, next)=>{
   try {
       const user = await User.findById(req.params.id);
       const { password, ...others} = user._doc;

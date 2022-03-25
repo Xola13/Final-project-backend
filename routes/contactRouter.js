@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const express = require('express');
 const nodemailer = require('nodemailer');
+const router = require('./userRouter');
 const app = express.Router();
 
 
@@ -19,16 +20,18 @@ app.post('/', (req, res) => {
         port: 465,
         secure: true,
         auth: {
-          user: process.env.user,
-          pass: process.env.pass,
+          user: process.env.Mail,
+          pass: process.env.PASS,
         }
       });
       
       var mailOptions = {
         from: email,
         to: 'xolamagatya86@gmail.com',
-        subject: 'Sending Email using Node.js',
-        text: `${name} has message you, saying:
+        subject: `${subject}`,
+        text: `Name: ${name}
+        Email: ${email}
+        Sent the Below Message
         ${message}`,
       };
       
@@ -41,11 +44,9 @@ app.post('/', (req, res) => {
           res.send({msg: "Message sent successfully" });
         }
       });
-      
+});
 
-
-
-})
+  
 
 
 

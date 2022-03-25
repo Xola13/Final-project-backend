@@ -5,53 +5,44 @@ const router = express.Router();
 // const auth = require("../middleware/authorise")
 // const { getProduct } = require("../middleware/functions");
 // const Product = require('../models/product');
-const Cart = require("../models/cart")
+const Cart = require("../models/cart");
+const User = require("../models/user");
+const jwt = require("jsonwebtoken");
 
 const { authenticationToken, authenticationTokenAndAuthorization, authenticationTokenAndAdmin } = require("../middleware/authorise");
+const user = require('../models/user');
+const { getProduct } = require('../middleware/functions');
 
-// CREATE
 
-router.post('/', authenticationToken, async (req, res, next) => {
-  const newCart = new Cart(req.body);
-  
-  try {
-      const savedCart = await newCart.save();
-      res.status(200).json(savedCart);
-  } catch (error) {
-      res.status(500).json(err);
-  }
-});
 
 // GET ALL
 
-router.get('/', authenticationTokenAndAdmin , async (req, res, next)=>{
+router.get('/', authenticationTokenAndAuthorization , async (req, res, next)=>{
     try {
-        const carts = await Cart.find();
-        res.status(200).json(carts)
+        const cart = await Cart.find({ userId: {$regex: req.user._id } });
+        res.status(200).json(products)
     } catch (error) {
         res.status(500).json(err);
     }
 });
 
-//GET USER CART
-
-router.get('/find/:id', authenticationTokenAndAuthorization, async (req, res, next) => {
-    
-    try {
-        const cart = await Cart.findOne({ userId: req.params.userId });
-        res.status(200).json(cart);
-    } catch (error) {
-        res.status(500).json(err)
-    }
-});
+//DELETE ALL
+router.delete('/', authenticationTokenAndAuthorization , async(req, res, next) => {
+try{
+    const cart = await Cart.deleteMany({ userId: {$regex: req.user._id} });
+    res.status(200).json("Deleted");
+ } catch (err) {
+     res.status(500).json(err)
+ } 
+})
 
 
-//DELETE
+//DELETE ONE
 
 router.delete('/:id', authenticationTokenAndAuthorization , async (req, res, next) => {
     
 try {
-    await Cart.findByIdAndDelete(req.params.id);
+  const cart = await Cart.findByIdAndDelete(req.params.id);
     res.status(200).json("Cart has been deleted..");
 } catch (error) {
     res.status(500).json(err);
@@ -76,93 +67,48 @@ router.put('/:id', authenticationTokenAndAuthorization , async (req, res, next) 
   }
 });
 
+//ADD items to cart
 
-// router.post("/:id/cart", [auth, getProduct], async (req, res, next) => {
-   
+router.post('/:id', [authenticationTokenAndAuthorization, getProduct], async (req, res, next) => {
+    const user = await user.findById(req.user.userId);
+    const cart = await Cart.find({"user_id": {$regex : req.user_id}});
 
-//     const user = await User.findById(req.user[0]._id);
 
-//     let product_id = res.product._id;
-//     let title = res.product.title;
-//     let categories = res.product.categories;
-//     let img = res.product.img;
-//     let price = res.product.price;
-//     let created_by = req.user[0]._id;
-//     let quantity 
-//     if(req.body.quantity) quantity = await req.body.quantity 
-//     else quantity = await res.product.quantity 
+    let product_id = res.product._id;
+    let title = res.product.title;
+    let category = res.product.category;
+    let img = res.product.img;
+    let quantity = res.body;
+    let price = res.product.price;
+    let userId = res.userId;
     
-    
-  
-//     try {
-      
-//       user.cart.push({
-//         product_id,
-//         title,
-//         categories,
-//         img,
-//         price,
-//         quantity,
-//         created_by,
-//       });
-//       const updatedUser = await user.save();
-//       if(updatedUser) {
-//         console.log(updatedUser)
-//         try {
-//             const accessToken = jwt.sign(JSON.stringify(updatedUser), process.env.ACCESS_TOKEN_SECRET)
-//             console.log({msg: 'Token has been created'})
-//             res.json({ jwt: accessToken })
-//             console.log({msg: 'Successfully added to your cart!'})
+    const carts = new Cart({
 
-//         }catch (err) {
-//             res.status(500).send({ msg: err.message })
-//         }
-//     }  
-  
-//       res.status(201).json(updatedUser);
-//     } catch (error) {
-//       res.status(500).json(console.log(error));
-//     }
-//   });
+        product_id,
+        title,
+        category,
+        quantity,
+        price,
+        img,
+        userId,
+    })
+    try {
+        carts.cart.push({
+            product_id,
+            title,
+            category,
+            price,
+            img,
+            quantity,
+        });
+        const updatedCart = await carts.save();
+        res.status(201).json(updatedCart);
+    }catch (err) {
+        res.status(500).json(console.log(err));
+    }
+});
 
-// // GET USER CART
-// router.get("/:id/cart", [auth, getProduct], (req,res) => {
 
-// })
 
-// //updates the items in the users cart
-// router.put("/:id/cart", [auth, getProduct], async (req, res, next) => {
-//     const user = await User.findById(req.user[0]._id);
-//     const inCart = user.cart.some(prod => prod.product_id == req.params.id);
-//     console.log(inCart)
-//     if (inCart) {
-//         const product = user.cart.find(prod => prod.product_id == req.params.id)
-//         product.qty = req.body.qty;
-//         const updatedUser = await user.save();
-//         console.log(updatedUser)
-//         try {
-//         res.status(201).json(updatedUser.cart);
-//         } catch (error) {
-//         res.status(500).json(console.log(error));
-//         }
-//       }
-  
-// });
-
-//   // DELETE THE USER CART
-//   router.delete("/:id/cart", [auth, getProduct], async (req, res, next) => {
-//     const user = await User.findById(req.user[0]._id);
-//     const inCart = user.cart.some(prod => prod.product_id == req.params.id);
-//     console.log(inCart)
-   
-//     user.remove(inCart)
-//     try{
-//         inCart.remove()
-//         res.json({ msg: '1 product deleted'})
-//     }catch (err) {
-//         res.status(500).json({ msg: err.message})
-//     }
-   
-//   });
 
 module.exports = router;
